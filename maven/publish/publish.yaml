@@ -1,0 +1,48 @@
+name: "JFrog Maven publish"
+description: "bce + bag + bp, optional SBOM (jf mvn dependency:tree) and Xray. Use after maven setup + build."
+
+inputs:
+  jfrog-url:
+    required: true
+  jfrog-access-token:
+    required: true
+  build-name:
+    required: true
+  build-number:
+    required: true
+  xray-scan:
+    required: false
+    default: "false"
+  xray-fail-on-violation:
+    required: false
+    default: "false"
+  capture-maven-sbom:
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install JFrog CLI
+      uses: jfrog/setup-jfrog-cli@v4
+      env:
+        JF_URL: ${{ inputs.jfrog-url }}
+        JF_ACCESS_TOKEN: ${{ inputs.jfrog-access-token }}
+        JFROG_CLI_AVOID_NEW_VERSION_WARNING: "true"
+
+    - name: Capture Maven SBOM
+      if: ${{ inputs.capture-maven-sbom == 'true' }}
+      shell: bash
+      run: jf mvn -B dependency:tree
+
+    - name: Publish build-info (bce + bag + bp)
+      shell: bash
+      run: |
+        jf rt bce "${{ inputs.build-name }}" "${{ inputs.build-number }}"
+        jf rt bag "${{ inputs.build-name }}" "${{ inputs.build-number }}"
+        jf rt bp "${{ inputs.build-name }}" "${{ inputs.build-number }}"
+
+    - name: Xray scan
+      if: ${{ inputs.xray-scan == 'true' }}
+      shell: bash
+      run: jf build-scan "${{ inputs.build-name }}" "${{ inputs.build-number }}" --fail="${{ inputs.xray-fail-on-violation }}"

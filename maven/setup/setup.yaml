@@ -1,0 +1,65 @@
+name: "JFrog Maven setup"
+description: "Java + Maven + JFrog CLI. Writes ~/.m2/settings.xml when resolve-repo set. Use then maven publish."
+
+inputs:
+  jfrog-url:
+    required: true
+  jfrog-user:
+    required: true
+  jfrog-access-token:
+    required: true
+  java-version:
+    required: false
+    default: "17"
+  maven-version:
+    required: false
+    default: "3.8.8"
+  resolve-repo:
+    required: false
+    default: ""
+  build-name:
+    required: false
+  build-number:
+    required: false
+  cache-maven:
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+        cache: ${{ inputs.cache-maven == 'true' && 'maven' || '' }}
+
+    - name: Setup Maven
+      uses: stCarolas/setup-maven@v5
+      with:
+        maven-version: ${{ inputs.maven-version }}
+
+    - name: Install JFrog CLI
+      uses: jfrog/setup-jfrog-cli@v4
+      env:
+        JF_URL: ${{ inputs.jfrog-url }}
+        JF_ACCESS_TOKEN: ${{ inputs.jfrog-access-token }}
+        JFROG_CLI_AVOID_NEW_VERSION_WARNING: "true"
+
+    - name: Maven → Artifactory (mvnc + settings.xml)
+      if: ${{ inputs.resolve-repo != '' }}
+      shell: bash
+      run: |
+        jf mvnc --repo-resolve-releases="${{ inputs.resolve-repo }}" --repo-resolve-snapshots="${{ inputs.resolve-repo }}"
+        mkdir -p "$HOME/.m2"
+        REPO_URL="${{ inputs.jfrog-url }}/artifactory/${{ inputs.resolve-repo }}"
+        printf '%s\n' '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd"><servers><server><id>artifactory</id><username>'"${{ inputs.jfrog-user }}"'</username><password>'"${{ inputs.jfrog-access-token }}"'</password></server></servers><mirrors><mirror><id>artifactory</id><url>'"$REPO_URL"'</url><mirrorOf>*</mirrorOf></mirror></mirrors></settings>' > "$HOME/.m2/settings.xml"
+
+    - name: Export build-info env
+      if: ${{ inputs.build-name != '' && inputs.build-number != '' }}
+      shell: bash
+      run: |
+        echo "JFROG_CLI_BUILD_NAME=${{ inputs.build-name }}" >> $GITHUB_ENV
+        echo "JFROG_CLI_BUILD_NUMBER=${{ inputs.build-number }}" >> $GITHUB_ENV
+        echo "CI=true" >> $GITHUB_ENV
