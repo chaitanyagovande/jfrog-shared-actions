@@ -6,8 +6,10 @@ inputs:
     required: true
   jfrog-user:
     required: true
-  jfrog-access-token:
+  jfrog-oidc-provider-name:
     required: true
+  jfrog-access-token:
+    required: false
   java-version:
     required: false
     default: "17"
@@ -27,6 +29,9 @@ inputs:
 
 runs:
   using: composite
+  env:
+    JOB_SUMMARY: false
+    JFROG_CLI_LOG_LEVEL: "DEBUG"
   steps:
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -44,8 +49,15 @@ runs:
       uses: jfrog/setup-jfrog-cli@v4
       env:
         JF_URL: ${{ inputs.jfrog-url }}
-        JF_ACCESS_TOKEN: ${{ inputs.jfrog-access-token }}
-        JFROG_CLI_AVOID_NEW_VERSION_WARNING: "true"
+        JFROG_CLI_LOG_LEVEL: ${{env.JFROG_CLI_LOG_LEVEL}}
+        JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
+        JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
+        JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        version: latest  #2.71.0
+        oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}
+        disable-job-summary: ${{env.JOB_SUMMARY}}
+        disable-auto-build-publish: true
 
     - name: Maven → Artifactory (mvnc + settings.xml)
       if: ${{ inputs.resolve-repo != '' }}
