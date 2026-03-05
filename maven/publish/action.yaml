@@ -38,6 +38,7 @@ runs:
         disable-job-summary: ${{env.JOB_SUMMARY}}
         disable-auto-build-publish: true
 
+    
 #    - name: Capture Maven SBOM
 #      if: ${{ inputs.capture-maven-sbom == 'true' }}
 #      shell: bash
