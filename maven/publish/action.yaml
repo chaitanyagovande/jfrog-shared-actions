@@ -47,6 +47,8 @@ runs:
 #      run: jf mvn -B dependency:tree
 
     - name: Publish build-info (bce + bag + bp)
+      env:
+        JFROG_CLI_LOG_LEVEL: DEBUG
       shell: bash
       run: |
         jf rt bce "${{ inputs.build-name }}" "${{ inputs.build-number }}"
@@ -54,6 +56,8 @@ runs:
         jf rt bp "${{ inputs.build-name }}" "${{ inputs.build-number }}" --detailed-summary=true
 
     - name: Xray scan
+      env:
+        JFROG_CLI_LOG_LEVEL: DEBUG
       if: ${{ inputs.xray-scan == 'true' }}
       shell: bash
       run: jf build-scan "${{ inputs.build-name }}" "${{ inputs.build-number }}" --fail="${{ inputs.xray-fail-on-violation }}"

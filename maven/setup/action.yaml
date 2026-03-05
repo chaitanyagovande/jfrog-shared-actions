@@ -73,6 +73,8 @@ runs:
         disable-auto-build-publish: true
 
     - name: Maven → Artifactory (mvnc + settings.xml)
+      env:
+        JFROG_CLI_LOG_LEVEL: DEBUG
       if: ${{ inputs.resolve-repo != '' }}
       shell: bash
       run: |
@@ -83,6 +85,8 @@ runs:
 
 
     - name: Export build-info env
+      env:
+        JFROG_CLI_LOG_LEVEL: DEBUG
       if: ${{ inputs.build-name != '' && inputs.build-number != '' }}
       shell: bash
       run: |
