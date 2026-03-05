@@ -4,8 +4,10 @@ description: "bce + bag + bp, optional SBOM (jf mvn dependency:tree) and Xray. U
 inputs:
   jfrog-url:
     required: true
+  jfrog-oidc-provider-name:
+    required: false
   jfrog-access-token:
-    required: true
+    required: false
   build-name:
     required: true
   build-number:
@@ -23,20 +25,20 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install JFrog CLI
-      uses: jfrog/setup-jfrog-cli@v4
-      env:
-        JF_URL: ${{ inputs.jfrog-url }}
-        JFROG_CLI_LOG_LEVEL: "DEBUG"
-        JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
-        JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
-        JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        JOB_SUMMARY: false
-      with:
-        version: latest  #2.71.0
-        oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}
-        disable-job-summary: ${{env.JOB_SUMMARY}}
-        disable-auto-build-publish: true
+#    - name: Install JFrog CLI
+#      uses: jfrog/setup-jfrog-cli@v4
+#      env:
+#        JF_URL: ${{ inputs.jfrog-url }}
+#        JFROG_CLI_LOG_LEVEL: "DEBUG"
+#        JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
+#        JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
+#        JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
+#        JOB_SUMMARY: false
+#      with:
+#        version: latest  #2.71.0
+#        oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}
+#        disable-job-summary: ${{env.JOB_SUMMARY}}
+#        disable-auto-build-publish: true
 
     
 #    - name: Capture Maven SBOM
