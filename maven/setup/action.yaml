@@ -76,7 +76,7 @@ runs:
       if: ${{ inputs.resolve-repo != '' }}
       shell: bash
       run: |
-        jf mvnc --repo-resolve-releases="${{ inputs.resolve-repo }}" --repo-resolve-snapshots="${{ inputs.resolve-repo }}"
+        jf mvnc --repo-resolve-releases="${{ inputs.resolve-repo }}" --repo-resolve-snapshots="${{ inputs.resolve-repo }}" --repo-deploy-releases="${{ inputs.resolve-repo }}" --repo-deploy-snapshots="${{ inputs.resolve-repo }}"
 #        mkdir -p "$HOME/.m2"
 #        REPO_URL="${{ inputs.jfrog-url }}/artifactory/${{ inputs.resolve-repo }}"
 #        printf '%s\n' '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd"><servers><server><id>artifactory</id><username>'"${{ inputs.jfrog-user }}"'</username><password>'"${{ inputs.jfrog-access-token }}"'</password></server></servers><mirrors><mirror><id>artifactory</id><url>'"$REPO_URL"'</url><mirrorOf>*</mirrorOf></mirror></mirrors></settings>' > "$HOME/.m2/settings.xml"
