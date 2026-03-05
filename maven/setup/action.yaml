@@ -30,6 +30,21 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Print input variables
+      shell: bash
+      run: |
+        echo "## Input variables"
+        echo "jfrog-url: ${{ inputs.jfrog-url }}"
+        echo "jfrog-user: ${{ inputs.jfrog-user }}"
+        echo "jfrog-oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}"
+        echo "jfrog-access-token: ${{ inputs.jfrog-access-token != '' && '(set)' || '(empty)' }}"
+        echo "java-version: ${{ inputs.java-version }}"
+        echo "maven-version: ${{ inputs.maven-version }}"
+        echo "resolve-repo: ${{ inputs.resolve-repo }}"
+        echo "build-name: ${{ inputs.build-name }}"
+        echo "build-number: ${{ inputs.build-number }}"
+        echo "cache-maven: ${{ inputs.cache-maven }}"
+
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
@@ -46,7 +61,7 @@ runs:
       uses: jfrog/setup-jfrog-cli@v4
       env:
         JF_URL: ${{ inputs.jfrog-url }}
-        JFROG_CLI_LOG_LEVEL: "DEBUG""
+        JFROG_CLI_LOG_LEVEL: "DEBUG"
         JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
         JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
         JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
