@@ -27,13 +27,21 @@ runs:
       uses: jfrog/setup-jfrog-cli@v4
       env:
         JF_URL: ${{ inputs.jfrog-url }}
-        JF_ACCESS_TOKEN: ${{ inputs.jfrog-access-token }}
-        JFROG_CLI_AVOID_NEW_VERSION_WARNING: "true"
+        JFROG_CLI_LOG_LEVEL: "DEBUG"
+        JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
+        JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
+        JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        JOB_SUMMARY: false
+      with:
+        version: latest  #2.71.0
+        oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}
+        disable-job-summary: ${{env.JOB_SUMMARY}}
+        disable-auto-build-publish: true
 
-    - name: Capture Maven SBOM
-      if: ${{ inputs.capture-maven-sbom == 'true' }}
-      shell: bash
-      run: jf mvn -B dependency:tree
+#    - name: Capture Maven SBOM
+#      if: ${{ inputs.capture-maven-sbom == 'true' }}
+#      shell: bash
+#      run: jf mvn -B dependency:tree
 
     - name: Publish build-info (bce + bag + bp)
       shell: bash
