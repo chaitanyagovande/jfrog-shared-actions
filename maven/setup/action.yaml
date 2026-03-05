@@ -52,10 +52,10 @@ runs:
         java-version: ${{ inputs.java-version }}
         cache: ${{ inputs.cache-maven == 'true' && 'maven' || '' }}
 
-    - name: Setup Maven
-      uses: stCarolas/setup-maven@v5
-      with:
-        maven-version: ${{ inputs.maven-version }}
+#    - name: Setup Maven
+#      uses: stCarolas/setup-maven@v5
+#      with:
+#        maven-version: ${{ inputs.maven-version }}
 
     - name: Install JFrog CLI
       uses: jfrog/setup-jfrog-cli@v4
