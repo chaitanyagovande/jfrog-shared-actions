@@ -45,12 +45,12 @@ runs:
         echo "build-number: ${{ inputs.build-number }}"
         echo "cache-maven: ${{ inputs.cache-maven }}"
 
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: temurin
-        java-version: ${{ inputs.java-version }}
-        cache: ${{ inputs.cache-maven == 'true' && 'maven' || '' }}
+#    - name: Setup Java
+#      uses: actions/setup-java@v4
+#      with:
+#        distribution: temurin
+#        java-version: ${{ inputs.java-version }}
+#        cache: ${{ inputs.cache-maven == 'true' && 'maven' || '' }}
 
 #    - name: Setup Maven
 #      uses: stCarolas/setup-maven@v5
