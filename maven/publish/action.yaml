@@ -51,7 +51,7 @@ runs:
       run: |
         jf rt bce "${{ inputs.build-name }}" "${{ inputs.build-number }}"
         jf rt bag "${{ inputs.build-name }}" "${{ inputs.build-number }}"
-        jf rt bp "${{ inputs.build-name }}" "${{ inputs.build-number }}"
+        jf rt bp "${{ inputs.build-name }}" "${{ inputs.build-number }}" --detailed-summary=true
 
     - name: Xray scan
       if: ${{ inputs.xray-scan == 'true' }}
