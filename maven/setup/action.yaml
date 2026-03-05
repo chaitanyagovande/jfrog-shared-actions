@@ -29,9 +29,6 @@ inputs:
 
 runs:
   using: composite
-  env:
-    JOB_SUMMARY: false
-    JFROG_CLI_LOG_LEVEL: "DEBUG"
   steps:
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -49,10 +46,11 @@ runs:
       uses: jfrog/setup-jfrog-cli@v4
       env:
         JF_URL: ${{ inputs.jfrog-url }}
-        JFROG_CLI_LOG_LEVEL: ${{env.JFROG_CLI_LOG_LEVEL}}
+        JFROG_CLI_LOG_LEVEL: "DEBUG""
         JFROG_CLI_RELEASES_REPO: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}' 
         JFROG_CLI_EXTRACTORS_REMOTE: '${{inputs.jfrog-url}}/artifactory/${{inputs.resolve-repo}}'
         JF_GIT_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        JOB_SUMMARY: false
       with:
         version: latest  #2.71.0
         oidc-provider-name: ${{ inputs.jfrog-oidc-provider-name }}
