@@ -42,25 +42,42 @@ steps:
     inputs:
       targetType: inline
       script: |
-        $tempDir = "$env:TEMP"
-        Write-Host "Searching for jfrog nuget temp configs in: $tempDir"
+        # Use full path to jf since it's not in PATH for standalone PS steps
+        $jfPath = "C:\hostedtoolcache\windows\jf\2.103.0\x64\jf.exe"
         
-        # Find the jfrog temp nuget config
+        # Use full expanded temp path
+        $tempDir = "C:\Users\VssAdministrator\AppData\Local\Temp"
+        Write-Host "Searching in: $tempDir"
+        
+        # Find jfrog nuget temp configs
         $configs = Get-ChildItem -Path $tempDir -Recurse -Filter "jfrog.cli.nuget.*" -ErrorAction SilentlyContinue
-        foreach ($config in $configs) {
-          Write-Host "Found: $($config.FullName)"
-          Write-Host "Contents:"
-          Get-Content $config.FullName
-          Write-Host "---"
+        if ($configs) {
+          foreach ($config in $configs) {
+            Write-Host "=== Found: $($config.FullName) ==="
+            Get-Content $config.FullName
+            Write-Host "---"
+          }
+        } else {
+          Write-Host "No jfrog nuget temp configs found (may have been cleaned up already)"
         }
-        
-        # Also check what jf server config looks like
-        Write-Host "JF server config:"
-        & jf c show
-        
-        # Ping test
-        Write-Host "Ping test:"
-        & jf rt ping
+
+        # Also search for jfrog.cli.temp directories
+        Write-Host "`nSearching for jfrog.cli.temp dirs:"
+        Get-ChildItem -Path $tempDir -Directory -Filter "jfrog.cli.temp*" -ErrorAction SilentlyContinue |
+          ForEach-Object {
+            Write-Host "Dir: $($_.FullName)"
+            Get-ChildItem $_.FullName | ForEach-Object {
+              Write-Host "  File: $($_.Name)"
+              Get-Content $_.FullName -ErrorAction SilentlyContinue
+            }
+          }
+
+        # JF server config and ping using full path
+        Write-Host "`n=== JF Server Config ==="
+        & $jfPath c show
+
+        Write-Host "`n=== JF Ping Test ==="
+        & $jfPath rt ping
     env:
       JFROG_CLI_AVOID_NEW_VERSION_WARNING: "TRUE"
 
