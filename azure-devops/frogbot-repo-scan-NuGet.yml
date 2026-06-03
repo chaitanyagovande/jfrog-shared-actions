@@ -25,6 +25,18 @@ parameters:
   - name: sdkVersion
     type: string
     default: "8.0.x"
+  - name: gitOwner
+    type: string
+    # GitHub org or user (e.g. my-org). Not the Azure DevOps project name.
+  - name: gitRepo
+    type: string
+    default: ""
+    # Leave empty to use $(Build.Repository.Name). Must be repo name only (e.g. AspGoat),
+    # not owner/repo — set gitOwner separately.
+  - name: gitApiEndpoint
+    type: string
+    default: "https://api.github.com"
+    # GitHub Enterprise: https://github.mycompany.com/api/v3
 
 steps:
   - checkout: self
@@ -79,14 +91,25 @@ steps:
   - task: PowerShell@2
     displayName: 'Frogbot scan-repository'
     env:
-      # ── Git provider (Azure Repos) ────────────────────────────────────────
-      JF_GIT_PROVIDER: 'azureRepos'
-      JF_GIT_PROJECT: $(System.TeamProject)
-      JF_GIT_REPO: $(Build.Repository.Name)
-      JF_GIT_API_ENDPOINT: $(System.CollectionUri)
+      # ── Git provider (GitHub) ─────────────────────────────────────────────
+      # JFrog docs: https://docs.jfrog.com/security/docs/github
+      # JF_GIT_TOKEN must be a GitHub PAT (repo scope), NOT an Azure DevOps PAT.
+      JF_GIT_PROVIDER: 'github'
+      JF_GIT_OWNER: ${{ parameters.gitOwner }}
+      JF_GIT_API_ENDPOINT: ${{ parameters.gitApiEndpoint }}
       JF_GIT_BASE_BRANCH: $(Build.SourceBranchName)
-      JF_GIT_OWNER: $(System.TeamProject)
-      JF_GIT_TOKEN: $(JF_GIT_TOKEN)         # secret — from variable group
+      JF_GIT_TOKEN: $(JF_GIT_TOKEN)         # secret — GitHub PAT from variable group
+      GIT_REPO_OVERRIDE: ${{ parameters.gitRepo }}
+      CI: 'true'
+
+      # Azure Repos (use instead of the block above if repo is in Azure DevOps Git):
+      # JF_GIT_PROVIDER: 'azureRepos'
+      # JF_GIT_PROJECT: $(System.TeamProject)
+      # JF_GIT_REPO: $(Build.Repository.Name)
+      # JF_GIT_API_ENDPOINT: $(System.CollectionUri)
+      # JF_GIT_BASE_BRANCH: $(Build.SourceBranchName)
+      # JF_GIT_OWNER: $(System.TeamProject)
+      # JF_GIT_TOKEN: $(JF_GIT_TOKEN)         # Azure DevOps PAT (Code Read & Write)
 
       # ── JFrog Platform connection ─────────────────────────────────────────
       JF_URL: $(JF_URL)
@@ -128,9 +151,27 @@ steps:
           exit 1
         }
 
+        # Resolve JF_GIT_OWNER / JF_GIT_REPO for GitHub (repo name only, not owner/repo)
+        if ($env:GIT_REPO_OVERRIDE) {
+          $env:JF_GIT_REPO = $env:GIT_REPO_OVERRIDE
+        } else {
+          $repoFull = "$(Build.Repository.Name)"
+          if ($repoFull -match '^([^/]+)/([^/]+)$') {
+            if (-not $env:JF_GIT_OWNER) { $env:JF_GIT_OWNER = $Matches[1] }
+            $env:JF_GIT_REPO = $Matches[2]
+          } else {
+            $env:JF_GIT_REPO = $repoFull
+          }
+        }
+
         Write-Host "Frogbot version: ${{ parameters.frogbotVersion }}"
         Write-Host "Binary path:     $frogbotExe"
         Write-Host "Solution:        ${{ parameters.solutionName }}"
+        Write-Host "Git provider:    $env:JF_GIT_PROVIDER"
+        Write-Host "Git owner:       $env:JF_GIT_OWNER"
+        Write-Host "Git repo:        $env:JF_GIT_REPO"
+        Write-Host "Git API:         $env:JF_GIT_API_ENDPOINT"
+        Write-Host "Git branch:      $env:JF_GIT_BASE_BRANCH"
 
         & $frogbotExe scan-repository
         $exitCode = $LASTEXITCODE
