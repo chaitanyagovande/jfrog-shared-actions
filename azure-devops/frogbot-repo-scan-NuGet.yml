@@ -38,20 +38,31 @@ steps:
 
 
   - task: PowerShell@2
-    displayName: "Check project style"
+    displayName: "Inspect jf nuget temp config"
     inputs:
       targetType: inline
       script: |
-        # Check if packages.config exists
-        Get-ChildItem -Path "$(Build.SourcesDirectory)" -Recurse -Include "packages.config" | Select-Object FullName
+        $tempDir = "$env:TEMP"
+        Write-Host "Searching for jfrog nuget temp configs in: $tempDir"
         
-        # Check if it's SDK-style (has <Project Sdk=)
-        $csproj = Get-Content "$(Build.SourcesDirectory)\AspGoat.csproj" -Raw
-        if ($csproj -match '<Project Sdk=') {
-          Write-Host "SDK-style project (use dotnet restore)"
-        } else {
-          Write-Host "Classic project (use nuget restore + packages.config)"
+        # Find the jfrog temp nuget config
+        $configs = Get-ChildItem -Path $tempDir -Recurse -Filter "jfrog.cli.nuget.*" -ErrorAction SilentlyContinue
+        foreach ($config in $configs) {
+          Write-Host "Found: $($config.FullName)"
+          Write-Host "Contents:"
+          Get-Content $config.FullName
+          Write-Host "---"
         }
+        
+        # Also check what jf server config looks like
+        Write-Host "JF server config:"
+        & jf c show
+        
+        # Ping test
+        Write-Host "Ping test:"
+        & jf rt ping
+    env:
+      JFROG_CLI_AVOID_NEW_VERSION_WARNING: "TRUE"
 
 
   # ── Restore NuGet packages via Artifactory ────────────────────────────────
