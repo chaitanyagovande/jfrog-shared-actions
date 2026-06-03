@@ -56,6 +56,8 @@ steps:
   # ── Download Frogbot binary from internal Artifactory ─────────────────────
   - task: JFrogGenericArtifacts@1
     displayName: 'Download Frogbot v${{ parameters.frogbotVersion }}'
+    env:
+      JFROG_CLI_TRANSITIVE_DOWNLOAD: "true"
     inputs:
       command: 'Download'
       connection: 'Artifactory-V2'
