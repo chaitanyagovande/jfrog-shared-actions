@@ -36,6 +36,18 @@ steps:
       packageType: 'sdk'
       version: '${{ parameters.sdkVersion }}'
 
+
+  - task: PowerShell@2
+    displayName: "Find solution files"
+    inputs:
+      targetType: inline
+      script: |
+        Write-Host "Workspace root: $(Build.SourcesDirectory)"
+        Write-Host "---"
+        Get-ChildItem -Path "$(Build.SourcesDirectory)" -Recurse -Include "*.sln","packages.config","*.csproj" |
+          Select-Object FullName
+
+
   # ── Restore NuGet packages via Artifactory ────────────────────────────────
   # Populates the local package cache before Frogbot runs.
   # JF_INSTALL_DEPS_CMD lets Frogbot re-run restore internally for its own
