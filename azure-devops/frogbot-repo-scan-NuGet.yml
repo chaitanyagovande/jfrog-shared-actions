@@ -37,46 +37,6 @@ steps:
       version: '${{ parameters.sdkVersion }}'
 
 
-  - task: PowerShell@2
-    displayName: "JF Auth Verification"
-    inputs:
-      targetType: inline
-      script: |
-        # Dynamically find jf.exe wherever it was cached
-        $jfExe = Get-ChildItem -Path "C:\hostedtoolcache\windows\jf" -Recurse -Filter "jf.exe" -ErrorAction SilentlyContinue |
-                Select-Object -First 1 -ExpandProperty FullName
-
-        if (-not $jfExe) {
-          Write-Host "##[error]jf.exe not found in tool cache - has the JFrog CLI setup task run yet?"
-          exit 1
-        }
-        Write-Host "Found jf at: $jfExe"
-
-        # Show all configured servers
-        Write-Host "`n=== Configured JF Servers ==="
-        & $jfExe c show
-
-        # Ping Artifactory
-        Write-Host "`n=== Ping Test ==="
-        & $jfExe rt ping
-
-        # Directly test the NuGet endpoint with the stored token
-        Write-Host "`n=== Direct NuGet index.json test ==="
-        $token = (& $jfExe config export 2>$null)
-        
-        # Hit the index.json directly
-        try {
-          $response = Invoke-WebRequest `
-            -Uri "https://psazuse.jfrog.io/artifactory/api/nuget/v3/selective-nuget-virtual/index.json" `
-            -UseBasicParsing `
-            -ErrorAction Stop
-          Write-Host "index.json status (no auth): $($response.StatusCode)"
-        } catch {
-          Write-Host "index.json status (no auth): $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Message)"
-        }
-    env:
-      JFROG_CLI_AVOID_NEW_VERSION_WARNING: "TRUE"
-
 
   # ── Restore NuGet packages via Artifactory ────────────────────────────────
   # Populates the local package cache before Frogbot runs.
