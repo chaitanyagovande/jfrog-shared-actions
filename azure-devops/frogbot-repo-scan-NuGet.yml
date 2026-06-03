@@ -58,6 +58,7 @@ steps:
     displayName: 'Download Frogbot v${{ parameters.frogbotVersion }}'
     env:
       JFROG_CLI_TRANSITIVE_DOWNLOAD: "true"
+      JFROG_CLI_LOG_LEVEL: "DEBUG"
     inputs:
       command: 'Download'
       connection: 'Artifactory-V2'
@@ -66,7 +67,7 @@ steps:
         {
           "files": [
             {
-              "pattern": "selective-generic-virtual/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
+              "pattern": "artifactory/selective-generic-virtual/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
               "target": "$(Pipeline.Workspace)\\frogbot\\",
               "flat": "true"
             }
