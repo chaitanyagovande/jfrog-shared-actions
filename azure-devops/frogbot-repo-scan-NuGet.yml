@@ -1,0 +1,133 @@
+# Frogbot NuGet / .NET Repository Scan — Reusable Template
+#
+# Intended for use from a pipeline that provides the "Jfrog-FrogBot" variable group.
+#
+# Audit fixes applied:
+#   F-01: Removed JF_USE_CONFIG_PROFILE (undocumented, no effect)
+#   F-02: Removed JF_SKIP_AUTOFIX (undocumented, auto-fix was NOT being disabled)
+#   F-03: JF_FAIL is now a quoted string "false" (was a bare YAML boolean)
+#   F-04: Added JF_RELEASES_REPO — required for air-gapped environments so Frogbot
+#         can download its analyzer binaries (Xray, secrets, SAST) from internal Artifactory
+#         instead of releases.jfrog.io
+#   F-07: Added JF_INSTALL_DEPS_CMD — mandatory per JFrog docs when the project uses
+#         NuGet/.NET and no installCommand is set in frogbot-config.yml
+#   F-08: JFROG_CLI_LOG_LEVEL changed from DEBUG to INFO
+#   F-09: Added JF_DEPS_REPO — directs Frogbot to resolve missing NuGet packages
+#         through Artifactory rather than nuget.org (required in air-gapped networks)
+
+parameters:
+  - name: frogbotVersion
+    type: string
+    default: "2.31.0"
+  - name: solutionName
+    type: string
+    default: "netcore-template.sln"
+  - name: sdkVersion
+    type: string
+    default: "8.0.x"
+
+steps:
+  - checkout: self
+
+  # ── Install .NET SDK ──────────────────────────────────────────────────────
+  - task: UseDotNet@2
+    displayName: 'Install .NET SDK ${{ parameters.sdkVersion }}'
+    inputs:
+      packageType: 'sdk'
+      version: '${{ parameters.sdkVersion }}'
+
+  # ── Restore NuGet packages via Artifactory ────────────────────────────────
+  # Populates the local package cache before Frogbot runs.
+  # JF_INSTALL_DEPS_CMD lets Frogbot re-run restore internally for its own
+  # dependency graph — it will find packages already in NUGET_PACKAGES cache.
+  - task: JFrogNuget@1
+    displayName: 'Artifactory NuGet Restore'
+    inputs:
+      command: 'restore'
+      artifactoryConnection: 'Artifactory-V2'
+      targetResolveRepo: 'qa-nuget-release'
+      solutionPath: '$(Build.SourcesDirectory)/${{ parameters.solutionName }}'
+      noNuGetCache: true
+      packagesDirectory: '$(Build.SourcesDirectory)/self/packages'
+      nugetProtocolVersion: 'v3'
+
+  # ── Download Frogbot binary from internal Artifactory ─────────────────────
+  - task: JFrogGenericArtifacts@1
+    displayName: 'Download Frogbot v${{ parameters.frogbotVersion }}'
+    inputs:
+      command: 'Download'
+      connection: 'Artifactory-V2'
+      specSource: 'taskConfiguration'
+      fileSpec: |
+        {
+          "files": [
+            {
+              "pattern": "global-buildtools-approved-opensource/Frogbot/${{ parameters.frogbotVersion }}/frogbot.exe",
+              "target": "$(Pipeline.Workspace)\\frogbot\\",
+              "flat": "true"
+            }
+          ]
+        }
+      failNoOp: true
+
+  # ── Run Frogbot ───────────────────────────────────────────────────────────
+  - task: PowerShell@2
+    displayName: 'Frogbot scan-repository'
+    env:
+      # ── Git provider (Azure Repos) ────────────────────────────────────────
+      JF_GIT_PROVIDER: 'azureRepos'
+      JF_GIT_PROJECT: $(System.TeamProject)
+      JF_GIT_REPO: $(Build.Repository.Name)
+      JF_GIT_API_ENDPOINT: $(System.CollectionUri)
+      JF_GIT_BASE_BRANCH: $(Build.SourceBranchName)
+      JF_GIT_OWNER: $(System.TeamProject)
+      JF_GIT_TOKEN: $(JF_GIT_TOKEN)         # secret — from variable group
+
+      # ── JFrog Platform connection ─────────────────────────────────────────
+      JF_URL: $(JF_URL)
+      JF_ACCESS_TOKEN: $(JF_ACCESS_TOKEN)   # secret — from variable group
+
+      # ── Air-gapped: redirect analyzer binary downloads to Artifactory ─────
+      # The remote repo must proxy https://releases.jfrog.io
+      # with "Store Artifacts Locally" unchecked.
+      # Docs: docs.jfrog.com/security/docs/azure-devops
+      JF_RELEASES_REPO: $(JF_RELEASES_REPO)
+
+      # ── NuGet dependency resolution ───────────────────────────────────────
+      # F-07: Mandatory for NuGet/.NET — Frogbot uses this to build its own
+      # dependency graph for CVE mapping and SBOM generation.
+      JF_INSTALL_DEPS_CMD: 'dotnet restore ${{ parameters.solutionName }}'
+
+      # F-09: Virtual NuGet repo for resolving packages not in local cache.
+      # Use the same repo already configured in JFrogNuget@1 above.
+      JF_DEPS_REPO: 'qa-nuget-release'
+
+      # Pre-populated by JFrogNuget@1 above — Frogbot's dotnet restore will
+      # find packages here without hitting the network again.
+      NUGET_PACKAGES: $(Build.SourcesDirectory)/self/packages
+
+      # ── Scan behaviour ────────────────────────────────────────────────────
+      # F-03: Must be a quoted string, not a bare YAML boolean.
+      JF_FAIL: "false"
+
+      # F-08: Use INFO in production; switch to DEBUG only for troubleshooting.
+      JFROG_CLI_LOG_LEVEL: INFO
+
+    inputs:
+      targetType: 'inline'
+      script: |
+        $frogbotExe = "$(Pipeline.Workspace)\frogbot\frogbot.exe"
+
+        if (-not (Test-Path $frogbotExe)) {
+          Write-Error "Frogbot binary not found at $frogbotExe"
+          exit 1
+        }
+
+        Write-Host "Frogbot version: ${{ parameters.frogbotVersion }}"
+        Write-Host "Binary path:     $frogbotExe"
+        Write-Host "Solution:        ${{ parameters.solutionName }}"
+
+        & $frogbotExe scan-repository
+        $exitCode = $LASTEXITCODE
+        Write-Host "Frogbot exited with code: $exitCode"
+        exit $exitCode
