@@ -87,7 +87,7 @@ steps:
     inputs:
       command: 'restore'
       artifactoryConnection: 'Artifactory-V2'
-      targetResolveRepo: 'selective-nuget-virtual'
+      targetResolveRepo: 'selective-nuget-remote'
       solutionPath: '${{ parameters.solutionName }}'
       noNuGetCache: true
       packagesDirectory: 'packages'
