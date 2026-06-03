@@ -67,7 +67,7 @@ steps:
         {
           "files": [
             {
-              "pattern": "artifactory/selective-generic-virtual/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
+              "pattern": "selective-generic-virtual/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
               "target": "$(Pipeline.Workspace)\\frogbot\\",
               "flat": "true"
             }
