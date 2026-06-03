@@ -38,14 +38,20 @@ steps:
 
 
   - task: PowerShell@2
-    displayName: "Find solution files"
+    displayName: "Check project style"
     inputs:
       targetType: inline
       script: |
-        Write-Host "Workspace root: $(Build.SourcesDirectory)"
-        Write-Host "---"
-        Get-ChildItem -Path "$(Build.SourcesDirectory)" -Recurse -Include "*.sln","packages.config","*.csproj" |
-          Select-Object FullName
+        # Check if packages.config exists
+        Get-ChildItem -Path "$(Build.SourcesDirectory)" -Recurse -Include "packages.config" | Select-Object FullName
+        
+        # Check if it's SDK-style (has <Project Sdk=)
+        $csproj = Get-Content "$(Build.SourcesDirectory)\AspGoat.csproj" -Raw
+        if ($csproj -match '<Project Sdk=') {
+          Write-Host "SDK-style project (use dotnet restore)"
+        } else {
+          Write-Host "Classic project (use nuget restore + packages.config)"
+        }
 
 
   # ── Restore NuGet packages via Artifactory ────────────────────────────────
