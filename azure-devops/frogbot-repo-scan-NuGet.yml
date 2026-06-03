@@ -47,7 +47,7 @@ steps:
     inputs:
       command: 'restore'
       artifactoryConnection: 'Artifactory-V2'
-      targetResolveRepo: 'selective-nuget-remote'
+      targetResolveRepo: 'selective-nuget-virtual'
       solutionPath: '${{ parameters.solutionName }}'
       noNuGetCache: true
       packagesDirectory: 'packages'
@@ -105,7 +105,7 @@ steps:
 
       # F-09: Virtual NuGet repo for resolving packages not in local cache.
       # Use the same repo already configured in JFrogNuget@1 above.
-      JF_DEPS_REPO: 'qa-nuget-release'
+      JF_DEPS_REPO: 'selective-nuget-virtual'
 
       # Pre-populated by JFrogNuget@1 above — Frogbot's dotnet restore will
       # find packages here without hitting the network again.
@@ -116,7 +116,7 @@ steps:
       JF_FAIL: "false"
 
       # F-08: Use INFO in production; switch to DEBUG only for troubleshooting.
-      JFROG_CLI_LOG_LEVEL: INFO
+      JFROG_CLI_LOG_LEVEL: "DEBUG"
 
     inputs:
       targetType: 'inline'
