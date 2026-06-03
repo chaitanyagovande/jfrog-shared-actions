@@ -45,10 +45,11 @@ steps:
     inputs:
       command: 'restore'
       artifactoryConnection: 'Artifactory-V2'
-      targetResolveRepo: 'qa-nuget-release'
+      targetResolveRepo: 'selective-nuget-virtual'
       solutionPath: '$(Build.SourcesDirectory)/${{ parameters.solutionName }}'
       noNuGetCache: true
-      packagesDirectory: '$(Build.SourcesDirectory)/self/packages'
+      packagesDirectory: 'self/packages'
+      workingDirectory: "$(Build.SourcesDirectory)/self"
       nugetProtocolVersion: 'v3'
 
   # ── Download Frogbot binary from internal Artifactory ─────────────────────
