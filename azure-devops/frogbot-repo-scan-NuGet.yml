@@ -38,46 +38,42 @@ steps:
 
 
   - task: PowerShell@2
-    displayName: "Inspect jf nuget temp config"
+    displayName: "JF Auth Verification"
     inputs:
       targetType: inline
       script: |
-        # Use full path to jf since it's not in PATH for standalone PS steps
-        $jfPath = "C:\hostedtoolcache\windows\jf\2.103.0\x64\jf.exe"
-        
-        # Use full expanded temp path
-        $tempDir = "C:\Users\VssAdministrator\AppData\Local\Temp"
-        Write-Host "Searching in: $tempDir"
-        
-        # Find jfrog nuget temp configs
-        $configs = Get-ChildItem -Path $tempDir -Recurse -Filter "jfrog.cli.nuget.*" -ErrorAction SilentlyContinue
-        if ($configs) {
-          foreach ($config in $configs) {
-            Write-Host "=== Found: $($config.FullName) ==="
-            Get-Content $config.FullName
-            Write-Host "---"
-          }
-        } else {
-          Write-Host "No jfrog nuget temp configs found (may have been cleaned up already)"
+        # Dynamically find jf.exe wherever it was cached
+        $jfExe = Get-ChildItem -Path "C:\hostedtoolcache\windows\jf" -Recurse -Filter "jf.exe" -ErrorAction SilentlyContinue |
+                Select-Object -First 1 -ExpandProperty FullName
+
+        if (-not $jfExe) {
+          Write-Host "##[error]jf.exe not found in tool cache - has the JFrog CLI setup task run yet?"
+          exit 1
         }
+        Write-Host "Found jf at: $jfExe"
 
-        # Also search for jfrog.cli.temp directories
-        Write-Host "`nSearching for jfrog.cli.temp dirs:"
-        Get-ChildItem -Path $tempDir -Directory -Filter "jfrog.cli.temp*" -ErrorAction SilentlyContinue |
-          ForEach-Object {
-            Write-Host "Dir: $($_.FullName)"
-            Get-ChildItem $_.FullName | ForEach-Object {
-              Write-Host "  File: $($_.Name)"
-              Get-Content $_.FullName -ErrorAction SilentlyContinue
-            }
-          }
+        # Show all configured servers
+        Write-Host "`n=== Configured JF Servers ==="
+        & $jfExe c show
 
-        # JF server config and ping using full path
-        Write-Host "`n=== JF Server Config ==="
-        & $jfPath c show
+        # Ping Artifactory
+        Write-Host "`n=== Ping Test ==="
+        & $jfExe rt ping
 
-        Write-Host "`n=== JF Ping Test ==="
-        & $jfPath rt ping
+        # Directly test the NuGet endpoint with the stored token
+        Write-Host "`n=== Direct NuGet index.json test ==="
+        $token = (& $jfExe config export 2>$null)
+        
+        # Hit the index.json directly
+        try {
+          $response = Invoke-WebRequest `
+            -Uri "https://psazuse.jfrog.io/artifactory/api/nuget/v3/selective-nuget-virtual/index.json" `
+            -UseBasicParsing `
+            -ErrorAction Stop
+          Write-Host "index.json status (no auth): $($response.StatusCode)"
+        } catch {
+          Write-Host "index.json status (no auth): $($_.Exception.Response.StatusCode.value__) - $($_.Exception.Message)"
+        }
     env:
       JFROG_CLI_AVOID_NEW_VERSION_WARNING: "TRUE"
 
