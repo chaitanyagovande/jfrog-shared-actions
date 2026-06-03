@@ -64,7 +64,7 @@ steps:
         {
           "files": [
             {
-              "pattern": "global-buildtools-approved-opensource/Frogbot/${{ parameters.frogbotVersion }}/frogbot.exe",
+              "pattern": "selective-generic-virtual/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}frogbot-windows-amd64/frogbot.exe",
               "target": "$(Pipeline.Workspace)\\frogbot\\",
               "flat": "true"
             }
@@ -133,3 +133,5 @@ steps:
         $exitCode = $LASTEXITCODE
         Write-Host "Frogbot exited with code: $exitCode"
         exit $exitCode
+
+
