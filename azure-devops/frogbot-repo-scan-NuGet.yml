@@ -52,7 +52,7 @@ steps:
       noNuGetCache: true
       packagesDirectory: 'packages'
       nugetProtocolVersion: 'v3'
-
+  # "pattern": "selective-generic-remote/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
   # ── Download Frogbot binary from internal Artifactory ─────────────────────
   - task: JFrogGenericArtifacts@1
     displayName: 'Download Frogbot v${{ parameters.frogbotVersion }}'
@@ -66,8 +66,8 @@ steps:
       fileSpec: |
         {
           "files": [
-            {
-              "pattern": "selective-generic-remote/artifactory/frogbot/v2/${{ parameters.frogbotVersion }}/frogbot-windows-amd64/frogbot.exe",
+            {              
+              "pattern": "selective-dev-generic-local/frogbot.exe",
               "target": "$(Pipeline.Workspace)\\frogbot\\",
               "flat": "true"
             }
