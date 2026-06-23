@@ -33,5 +33,5 @@ steps:
       JF_GIT_API_ENDPOINT: ${{ parameters.gitApiEndpoint }}
     inputs:
       script: |
-        curl -fL "https://releases.jfrog.io/artifactory/frogbot/v3/[RELEASE]/getFrogbot.sh" | sh
+        curl -fL "https://releases.jfrog.io/artifactory/frogbot/v3/${{ parameters.frogbotVersion }}/getFrogbot.sh" | sh
         ./frogbot scan-repository  
