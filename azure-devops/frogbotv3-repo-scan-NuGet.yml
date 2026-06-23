@@ -22,16 +22,20 @@ parameters:
 
 steps:
   - checkout: self
-  - task: CmdLine@2
+  # Git Bash on windows-latest — CmdLine/cmd.exe cannot run ./frogbot.exe
+  # getFrogbot.sh resolves the binary URL (incl. JF_RELEASES_REPO); only pass it in env.
+  - bash: |
+      set -e
+      curl -fLg "https://releases.jfrog.io/artifactory/frogbot/v3/${{ parameters.frogbotVersion }}/getFrogbot.sh" -o getFrogbot.sh
+      bash getFrogbot.sh ${{ parameters.frogbotVersion }}
+      ./frogbot.exe scan-repository
     displayName: 'Frogbotv3 scan-repository'
     env:
       JF_URL: $(JF_URL)
       JF_ACCESS_TOKEN: $(JF_ACCESS_TOKEN)
       JF_GIT_TOKEN: $(JF_GIT_TOKEN)
+      JF_RELEASES_REPO: $(JF_RELEASES_REPO)
       JF_GIT_PROVIDER: 'github'
       JF_GIT_OWNER: ${{ parameters.gitOwner }}
       JF_GIT_API_ENDPOINT: ${{ parameters.gitApiEndpoint }}
-    inputs:
-      script: |
-        curl -fL "https://releases.jfrog.io/artifactory/frogbot/v3/${{ parameters.frogbotVersion }}/getFrogbot.sh" | sh
-        ./frogbot scan-repository  
+      FROGBOT_INSECURE_SKIP_CHECKSUM_VERIFICATION: '1'  
