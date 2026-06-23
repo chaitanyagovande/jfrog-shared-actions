@@ -40,5 +40,6 @@ steps:
       JF_RELEASES_REPO: $(JF_RELEASES_REPO)
       JF_GIT_PROVIDER: 'github'
       JF_GIT_OWNER: ${{ parameters.gitOwner }}
+      JF_GIT_REPO: ${{ parameters.gitRepo }}
       JF_GIT_API_ENDPOINT: ${{ parameters.gitApiEndpoint }}
       FROGBOT_INSECURE_SKIP_CHECKSUM_VERIFICATION: '1'  
