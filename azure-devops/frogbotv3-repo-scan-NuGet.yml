@@ -27,6 +27,9 @@ steps:
   - bash: |
       set -e
       curl -fLg "https://releases.jfrog.io/artifactory/frogbot/v3/${{ parameters.frogbotVersion }}/getFrogbot.sh" -o getFrogbot.sh
+      # Force OSTYPE=msys so getFrogbot.sh selects frogbot-windows-amd64/frogbot.exe
+      # Git Bash on Azure DevOps Windows agents does not set OSTYPE automatically.
+      export OSTYPE=msys
       bash getFrogbot.sh ${{ parameters.frogbotVersion }}
       ./frogbot.exe scan-repository
     displayName: 'Frogbotv3 scan-repository'
