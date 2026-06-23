@@ -1,0 +1,40 @@
+parameters:
+  - name: frogbotVersion
+    type: string
+    default: "3.2.2"
+  - name: solutionName
+    type: string
+    default: "netcore-template.sln"
+  - name: gitOwner
+    type: string
+    # GitHub org or user (e.g. my-org). Not the Azure DevOps project name.
+  - name: gitRepo
+    type: string
+    default: ""
+    # Leave empty to use $(Build.Repository.Name). Must be repo name only (e.g. AspGoat),
+    # not owner/repo — set gitOwner separately.
+  - name: gitApiEndpoint
+    type: string
+    default: "https://api.github.com"
+    # GitHub Enterprise: https://github.mycompany.com/api/v3
+
+
+
+steps:
+  - checkout: self
+  - task: CmdLine@2
+    displayName: 'Frogbotv3 scan-repository'
+    env:
+      JF_URL: $(JF_URL)
+      JF_ACCESS_TOKEN: $(JF_ACCESS_TOKEN)
+      JF_GIT_TOKEN: $(JF_GIT_TOKEN)
+      JF_GIT_PROVIDER: 'github'
+      JF_GIT_OWNER: ${{ parameters.gitOwner }}
+      JF_GIT_API_ENDPOINT: ${{ parameters.gitApiEndpoint }}
+    inputs:
+      script: |
+        curl -fL "https://releases.jfrog.io/artifactory/frogbot/v3/[RELEASE]/getFrogbot.sh" | sh
+        ./frogbot scan-repository
+
+steps:
+  
