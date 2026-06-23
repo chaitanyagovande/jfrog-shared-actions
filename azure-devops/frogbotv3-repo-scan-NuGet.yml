@@ -34,7 +34,4 @@ steps:
     inputs:
       script: |
         curl -fL "https://releases.jfrog.io/artifactory/frogbot/v3/[RELEASE]/getFrogbot.sh" | sh
-        ./frogbot scan-repository
-
-steps:
-  
+        ./frogbot scan-repository  
